@@ -1,0 +1,6 @@
+form action="/profile/#{params["id"]}/uptate" method="post"
+    input type="text" name="Username" placeholder="Username" value = "#{users[0]["Username"]}"
+    input type="email" name="Mail" placeholder="Mail" value = "#{users[0]["Mail"]}"
+        button type="submit"  uptate  
+form action="/profile/#{params["id"]}/delete" method="post"  
+        button type="submit" delate
