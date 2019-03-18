@@ -1,4 +1,10 @@
-- post.each do |posts|    
-                article
-                    p #{posts["Username"]}
-                    p #{posts["Text"]}
+a href="/" 
+    h1 start
+- posts.each do |posts|    
+    article
+        p 
+            a href="/post/#{posts["Postid"]}"  
+                h2 #{posts["Username"]}
+                            
+        p #{posts["Text"]}
+        

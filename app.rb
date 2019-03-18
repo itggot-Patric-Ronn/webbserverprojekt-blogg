@@ -4,8 +4,20 @@ require 'slim'
 require 'byebug'
 enable:sessions
 
-get ('/') do
+get('/') do
     slim(:index)
+end 
+
+get('/post/new') do
+    if session[:loggedin] == true
+        slim(:post_new)
+    else
+        redirect('/not_loggin')
+    end 
+end
+
+get('/not_loggin') do 
+    slim(:not_loggin)
 end 
 
 get('/login/:id') do
@@ -33,7 +45,31 @@ get('/post/all') do
     db = SQLite3::Database.new("db/dbsave.db")
     db.results_as_hash = true
     result = db.execute("select users.Username, post.Postid, post.Number, post.Text from post INNER JOIN users on users.Id = post.Postid")
-    slim(:post_all, locals:{post: result})
+    slim(:post_all, locals:{posts: result})
+end  
+
+post('/post/:number/edit') do
+    db = SQLite3::Database.new("db/dbsave.db")
+    db.execute("UPDATE post SET Text = ? WHERE Number = ?",params["text"],params["number"])
+    redirect("/post/#{session[:Postid]}")
+end 
+
+get('/post/:number/edit') do
+    db = SQLite3::Database.new("db/dbsave.db")
+    db.results_as_hash = true
+    number = params["number"]
+    p number
+    result = db.execute("SELECT Text, Number From post Where Number = (?)", number)
+    slim(:post_edit, locals:{users: result})
+end
+
+get('/post/:postid') do
+    db = SQLite3::Database.new("db/dbsave.db")
+    db.results_as_hash = true
+    session[:Postid] = params["postid"]
+    postid = params["postid"]
+    result = db.execute("select users.Username, post.Postid, post.Number, post.Text from users INNER JOIN post on users.Id = post.Postid WHERE users.Id = ?", postid)    
+    slim(:post_one, locals:{posts: result})
 end 
 
 get('/users/login') do 
@@ -58,6 +94,7 @@ post('/login') do
             email = result[0]["Mail"]
             session[:cookies] = request.cookies
             session[:Id] = result[0]["Id"]
+            session[:loggedin] = true
             redirect("/profile/#{result[0]["Id"]}")
         else
             redirect('/no_access')
@@ -75,11 +112,32 @@ get('/users/new') do
     slim(:create_user)
 end
 
-post ('/create') do
+post('/create') do
     db = SQLite3::Database.new("db/dbsave.db")
     db.results_as_hash = true
     db.execute("INSERT INTO user_data (Name, Password, Email) VALUES (?,?,?)",params["name"],params["Password"],params["email"])
     redirect('/users')
-end 
+end
 
-#result = db.execute("select users.Username, post.Postid, post.Number, post.Text from users INNER JOIN post on users.Id = post.Postid WHERE users.Id = ?", session[:Id])
+post('/post/new') do
+    db = SQLite3::Database.new("db/dbsave.db")
+    db.results_as_hash = true
+    postid = session[:Id]
+    text = params["text"]
+    db.execute("INSERT INTO post (Postid, Text) VALUES (?,?)", postid, text)
+    redirect('/post/all')
+end
+
+post('/post/:number/delete') do
+    db = SQLite3::Database.new("db/dbsave.db")
+    number = params["number"]
+    db.execute("DELETE FROM post WHERE Number = ?", number)
+    redirect('/post/all')
+end
+
+post('/profile/:id/delete') do
+    db = SQLite3::Database.new("db/dbsave.db")
+    Id = params["id"]
+    db.execute("DELETE FROM user WHERE Id = ?", Id)
+    redirect('/')
+end
